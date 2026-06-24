@@ -112,21 +112,6 @@ export class PostTypeJitsi extends React.PureComponent<Props, State> {
             />
         );
 
-        let subtitle = (
-            <FormattedMessage
-                id='jitsi.meeting-id'
-                defaultMessage='Video Call ID: '
-            />
-        );
-        if (props.meeting_personal) {
-            subtitle = (
-                <FormattedMessage
-                    id='jitsi.personal-meeting-id'
-                    defaultMessage='Personal Video Call ID (PMI): '
-                />
-            );
-        }
-
         let title = (
             <FormattedMessage
                 id='jitsi.default-title'
@@ -146,17 +131,6 @@ export class PostTypeJitsi extends React.PureComponent<Props, State> {
                             <h1 style={style.title}>
                                 {title}
                             </h1>
-                            <span>
-                                {subtitle}
-                                <a
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    onClick={this.openJitsiMeeting}
-                                    href={meetingLink}
-                                >
-                                    {props.meeting_id}
-                                </a>
-                            </span>
                             <div>
                                 <div style={style.body}>
                                     <div>

@@ -87,6 +87,28 @@ describe('PostTypeJitsi', () => {
         expect(wrapper).toMatchSnapshot();
     });
 
+    it('should not render the meeting identifier in the invite card', () => {
+        const props = {
+            ...defaultProps,
+            creatorName: 'creator',
+            post: {
+                ...defaultProps.post,
+                props: {
+                    ...defaultProps.post.props,
+                    meeting_id: 'HiddenRoomId',
+                    meeting_topic: 'Visible Topic'
+                }
+            }
+        };
+
+        const wrapper = shallow(
+            <PostTypeJitsi {...props}/>
+        );
+
+        expect(wrapper.text()).not.toContain('HiddenRoomId');
+        expect(wrapper.find('a.btn-primary')).toHaveLength(1);
+    });
+
     it('should render a post without token if there is no jwt token, and shouldn\'t try to enrich the token', () => {
         defaultProps.actions.enrichMeetingJwt.mockClear();
         const props = {
@@ -125,7 +147,7 @@ describe('PostTypeJitsi', () => {
         expect(wrapper.find('h1')).toMatchSnapshot();
     });
 
-    it('should render the a different subtitle if the meeting is personal', () => {
+    it('should render a personal meeting invite without an identifier', () => {
         const props = {
             ...defaultProps,
             post: {
