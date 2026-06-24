@@ -12,7 +12,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const jitsiCommand = "jitsi"
+const (
+	jitsiCommand          = "jitsi"
+	jitsiVideoCallCommand = "videocall"
+)
+
+var jitsiCommands = []string{jitsiCommand, jitsiVideoCallCommand}
 
 const jitsiSettingsSeeCommand = "see"
 const jitsiStartCommand = "start"
@@ -28,66 +33,71 @@ func startMeetingError(channelID string, detailedError string) (*model.CommandRe
 	return &model.CommandResponse{
 			ResponseType: model.CommandResponseTypeEphemeral,
 			ChannelId:    channelID,
-			Text:         "We could not start a meeting at this time.",
+			Text:         "We could not start a video call at this time.",
 		}, &model.AppError{
-			Message:       "We could not start a meeting at this time.",
+			Message:       "We could not start a video call at this time.",
 			DetailedError: detailedError,
 		}
 }
 
-func (p *Plugin) createJitsiCommand() (*model.Command, error) {
+func (p *Plugin) createJitsiCommands() ([]*model.Command, error) {
 	iconData, err := command.GetIconData(p.API, "assets/icon.svg")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get icon data")
 	}
-	return &model.Command{
-		Trigger:              jitsiCommand,
-		AutoComplete:         true,
-		AutoCompleteDesc:     "Start a Jitsi meeting in current channel. Other available commands: start, help, settings",
-		AutoCompleteHint:     "[command]",
-		AutocompleteData:     getAutocompleteData(),
-		AutocompleteIconData: iconData,
-	}, nil
+
+	commands := make([]*model.Command, 0, len(jitsiCommands))
+	for _, trigger := range jitsiCommands {
+		commands = append(commands, &model.Command{
+			Trigger:              trigger,
+			AutoComplete:         true,
+			AutoCompleteDesc:     "Start a video call in current channel. Other available commands: start, help, settings",
+			AutoCompleteHint:     "[command]",
+			AutocompleteData:     getAutocompleteData(trigger),
+			AutocompleteIconData: iconData,
+		})
+	}
+	return commands, nil
 }
 
-func getAutocompleteData() *model.AutocompleteData {
-	jitsi := model.NewAutocompleteData("jitsi", "[command]", "Start a Jitsi meeting in current channel. Other available commands: start, help, settings")
+func getAutocompleteData(trigger string) *model.AutocompleteData {
+	jitsi := model.NewAutocompleteData(trigger, "[command]", "Start a video call in current channel. Other available commands: start, help, settings")
 
-	start := model.NewAutocompleteData(jitsiStartCommand, "[topic]", "Start a new meeting in the current channel")
-	start.AddTextArgument("(optional) The topic of the new meeting", "[topic]", "")
+	start := model.NewAutocompleteData(jitsiStartCommand, "[topic]", "Start a new video call in the current channel")
+	start.AddTextArgument("(optional) The topic of the new video call", "[topic]", "")
 	jitsi.AddCommand(start)
 
 	help := model.NewAutocompleteData("help", "", "Get slash command help")
 	jitsi.AddCommand(help)
 
-	settings := model.NewAutocompleteData("settings", "[setting] [value]", "Update your user settings (see /jitsi help for available options)")
+	settings := model.NewAutocompleteData("settings", "[setting] [value]", fmt.Sprintf("Update your user settings (see /%s help for available options)", trigger))
 
 	see := model.NewAutocompleteData(jitsiSettingsSeeCommand, "", "See your current settings")
 	settings.AddCommand(see)
 
-	embedded := model.NewAutocompleteData(commandArgEmbedded, "[value]", "Choose where the Jitsi meeting should open")
+	embedded := model.NewAutocompleteData(commandArgEmbedded, "[value]", "Choose where the video call should open")
 	items := []model.AutocompleteListItem{{
-		HelpText: "Jitsi meeting is embedded as a floating window inside Mattermost",
+		HelpText: "Video call is embedded as a floating window inside Mattermost",
 		Item:     valueTrue,
 	}, {
-		HelpText: "Jitsi meeting opens in a new window",
+		HelpText: "Video call opens in a new window",
 		Item:     valueFalse,
 	}}
-	embedded.AddStaticListArgument("Choose where the Jitsi meeting should open", true, items)
+	embedded.AddStaticListArgument("Choose where the video call should open", true, items)
 	settings.AddCommand(embedded)
 
-	showPrejoinPage := model.NewAutocompleteData(commandArgShowPrejoinPage, "[value]", "Choose whether the pre-join page should be visible on Jitsi meeting in embedded mode")
+	showPrejoinPage := model.NewAutocompleteData(commandArgShowPrejoinPage, "[value]", "Choose whether the pre-join page should be visible for embedded video calls")
 	items = []model.AutocompleteListItem{{
-		HelpText: "Pre-join page on Jitsi meeting will be displayed",
+		HelpText: "Pre-join page for embedded video calls will be displayed",
 		Item:     valueTrue,
 	}, {
-		HelpText: "Pre-join page on Jitsi meeting will not be displayed",
+		HelpText: "Pre-join page for embedded video calls will not be displayed",
 		Item:     valueFalse,
 	}}
-	showPrejoinPage.AddStaticListArgument("Choose whether the pre-join page should be visible on Jitsi meeting in embedded mode", true, items)
+	showPrejoinPage.AddStaticListArgument("Choose whether the pre-join page should be visible for embedded video calls", true, items)
 	settings.AddCommand(showPrejoinPage)
 
-	namingScheme := model.NewAutocompleteData(commandArgNamingScheme, "[value]", "Select how meeting names are generated")
+	namingScheme := model.NewAutocompleteData(commandArgNamingScheme, "[value]", "Select how video call names are generated")
 	items = []model.AutocompleteListItem{{
 		HelpText: "Random English words in title case (e.g. PlayfulDragonsObserveCuriously)",
 		Item:     "words",
@@ -95,13 +105,13 @@ func getAutocompleteData() *model.AutocompleteData {
 		HelpText: "UUID (universally unique identifier)",
 		Item:     "uuid",
 	}, {
-		HelpText: "Mattermost specific names. Combination of team name, channel name and random text in public and private channels; personal meeting name in direct and group messages channels",
+		HelpText: "Mattermost specific names. Combination of team name, channel name and random text in public and private channels; personal video call name in direct and group messages channels",
 		Item:     "mattermost",
 	}, {
-		HelpText: "The plugin asks you to select the name every time you start a meeting",
+		HelpText: "The plugin asks you to select the name every time you start a video call",
 		Item:     "ask",
 	}}
-	namingScheme.AddStaticListArgument("Choose where the Jitsi meeting should open", true, items)
+	namingScheme.AddStaticListArgument("Choose where the video call should open", true, items)
 	settings.AddCommand(namingScheme)
 	jitsi.AddCommand(settings)
 
@@ -111,6 +121,7 @@ func getAutocompleteData() *model.AutocompleteData {
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	split := strings.Fields(args.Command)
 	command := split[0]
+	commandName := strings.ToLower(strings.TrimPrefix(command, "/"))
 	var parameters []string
 	action := ""
 	if len(split) > 1 {
@@ -120,22 +131,34 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		parameters = split[2:]
 	}
 
-	if command != "/"+jitsiCommand {
+	if !isJitsiCommand(commandName) {
 		return &model.CommandResponse{}, nil
 	}
 
+	normalizedArgs := *args
+	normalizedArgs.Command = "/" + jitsiCommand + strings.TrimPrefix(args.Command, command)
+
 	switch action {
 	case "help":
-		return p.executeHelpCommand(c, args)
+		return p.executeHelpCommand(c, &normalizedArgs)
 
 	case "settings":
-		return p.executeSettingsCommand(c, args, parameters)
+		return p.executeSettingsCommand(c, &normalizedArgs, parameters)
 
 	case jitsiStartCommand:
 		fallthrough
 	default:
-		return p.executeStartMeetingCommand(c, args)
+		return p.executeStartMeetingCommand(c, &normalizedArgs)
 	}
+}
+
+func isJitsiCommand(command string) bool {
+	for _, jitsiCommandName := range jitsiCommands {
+		if command == jitsiCommandName {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Plugin) executeStartMeetingCommand(_ *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
@@ -177,27 +200,27 @@ func (p *Plugin) executeHelpCommand(_ *plugin.Context, args *model.CommandArgs) 
 	helpTitle := p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID: "jitsi.command.help.title",
-			Other: `###### Mattermost Jitsi Plugin - Slash Command help
+			Other: `###### AI Messenger Video - Slash Command help
 `,
 		},
 	})
 	commandHelp := p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID: "jitsi.command.help.text",
-			Other: `* |/jitsi| - Create a new meeting
-* |/jitsi start [topic]| - Create a new meeting with specified topic
-* |/jitsi help| - Show this help text
-* |/jitsi settings see| - View your current user settings for the Jitsi plugin
-* |/jitsi settings [setting] [value]| - Update your user settings (see below for options)
+			Other: `* |/jitsi| or |/videocall| - Create a new video call
+* |/jitsi start [topic]| or |/videocall start [topic]| - Create a new video call with specified topic
+* |/jitsi help| or |/videocall help| - Show this help text
+* |/jitsi settings see| or |/videocall settings see| - View your current video call settings
+* |/jitsi settings [setting] [value]| or |/videocall settings [setting] [value]| - Update your video call settings
 
-###### Jitsi Settings:
-* |/jitsi settings embedded [true/false]|: (Experimental) When true, Jitsi meeting is embedded as a floating window inside Mattermost. When false, Jitsi meeting opens in a new window.
-* |/jitsi settings show_prejoin_page [true/false]|: When false, pre-join page will not be displayed when Jitsi meet is embedded inside Mattermost.
-* |/jitsi settings naming_scheme [words/uuid/mattermost/ask]|: Select how meeting names are generated with one of these options:
+###### Video Call Settings:
+* |/jitsi settings embedded [true/false]|: When true, the video call opens inside Mattermost. When false, the video call opens in a new window.
+* |/jitsi settings show_prejoin_page [true/false]|: When false, the pre-join page will not be displayed for embedded video calls.
+* |/jitsi settings naming_scheme [words/uuid/mattermost/ask]|: Select how video call names are generated with one of these options:
     * |words|: Random English words in title case (e.g. PlayfulDragonsObserveCuriously)
     * |uuid|: UUID (universally unique identifier)
-    * |mattermost|: Mattermost specific names. Combination of team name, channel name and random text in public and private channels; personal meeting name in direct and group messages channels.
-    * |ask|: The plugin asks you to select the name every time you start a meeting`,
+    * |mattermost|: Mattermost specific names. Combination of team name, channel name and random text in public and private channels; personal video call name in direct and group messages channels.
+    * |ask|: The plugin asks you to select the name every time you start a video call`,
 		},
 	})
 
@@ -244,7 +267,7 @@ func (p *Plugin) executeSettingsCommand(_ *plugin.Context, args *model.CommandAr
 		text = p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID: "jitsi.command.settings.current_values",
-				Other: `###### Jitsi Settings:
+				Other: `###### Video Call Settings:
 * Embedded: |{{.Embedded}}|
 * Show Pre-join Page: |{{.ShowPrejoinPage}}|
 * Naming Scheme: |{{.NamingScheme}}|`,
@@ -356,7 +379,7 @@ func (p *Plugin) executeSettingsCommand(_ *plugin.Context, args *model.CommandAr
 		Message: p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "jitsi.command.settings.updated",
-				Other: fmt.Sprintf("Jitsi settings updated:\n\n* %s: `%s`", parameters[0], parameters[1]),
+				Other: fmt.Sprintf("Video call settings updated:\n\n* %s: `%s`", parameters[0], parameters[1]),
 			},
 		}),
 		RootId: args.RootId,

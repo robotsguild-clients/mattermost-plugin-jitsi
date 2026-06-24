@@ -44,7 +44,7 @@ class PluginClass {
         const action = (channel: Channel) => {
             store.dispatch(startMeeting(channel.id));
         };
-        const helpText = 'Start Jitsi Meeting';
+        const helpText = 'Start Video Call';
 
         // Channel header icon
         registry.registerChannelHeaderButtonAction(<Icon/>, action, helpText);

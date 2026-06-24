@@ -23,7 +23,7 @@ export function startMeeting(channelId: string, personal: boolean = false, topic
                 parent_id: '',
                 original_id: '',
                 reply_count: 0,
-                message: 'We could not start a meeting at this time.',
+                message: 'We could not start a video call at this time.',
                 type: 'system_ephemeral',
                 props: {},
                 metadata: {

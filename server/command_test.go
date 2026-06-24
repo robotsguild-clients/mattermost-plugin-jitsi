@@ -33,21 +33,21 @@ func TestCommandHelp(t *testing.T) {
 	require.Nil(t, err)
 	p.b = i18nBundle
 
-	helpText := strings.ReplaceAll(`###### Mattermost Jitsi Plugin - Slash Command help
-* |/jitsi| - Create a new meeting
-* |/jitsi start [topic]| - Create a new meeting with specified topic
-* |/jitsi help| - Show this help text
-* |/jitsi settings see| - View your current user settings for the Jitsi plugin
-* |/jitsi settings [setting] [value]| - Update your user settings (see below for options)
+	helpText := strings.ReplaceAll(`###### AI Messenger Video - Slash Command help
+* |/jitsi| or |/videocall| - Create a new video call
+* |/jitsi start [topic]| or |/videocall start [topic]| - Create a new video call with specified topic
+* |/jitsi help| or |/videocall help| - Show this help text
+* |/jitsi settings see| or |/videocall settings see| - View your current video call settings
+* |/jitsi settings [setting] [value]| or |/videocall settings [setting] [value]| - Update your video call settings
 
-###### Jitsi Settings:
-* |/jitsi settings embedded [true/false]|: (Experimental) When true, Jitsi meeting is embedded as a floating window inside Mattermost. When false, Jitsi meeting opens in a new window.
-* |/jitsi settings show_prejoin_page [true/false]|: When false, pre-join page will not be displayed when Jitsi meet is embedded inside Mattermost.
-* |/jitsi settings naming_scheme [words/uuid/mattermost/ask]|: Select how meeting names are generated with one of these options:
+###### Video Call Settings:
+* |/jitsi settings embedded [true/false]|: When true, the video call opens inside Mattermost. When false, the video call opens in a new window.
+* |/jitsi settings show_prejoin_page [true/false]|: When false, the pre-join page will not be displayed for embedded video calls.
+* |/jitsi settings naming_scheme [words/uuid/mattermost/ask]|: Select how video call names are generated with one of these options:
     * |words|: Random English words in title case (e.g. PlayfulDragonsObserveCuriously)
     * |uuid|: UUID (universally unique identifier)
-    * |mattermost|: Mattermost specific names. Combination of team name, channel name and random text in public and private channels; personal meeting name in direct and group messages channels.
-    * |ask|: The plugin asks you to select the name every time you start a meeting`, "|", "`")
+    * |mattermost|: Mattermost specific names. Combination of team name, channel name and random text in public and private channels; personal video call name in direct and group messages channels.
+    * |ask|: The plugin asks you to select the name every time you start a video call`, "|", "`")
 
 	apiMock.On("SendEphemeralPost", "test-user", &model.Post{
 		UserId:    "test-bot-id",
@@ -79,7 +79,13 @@ func TestCommandSettings(t *testing.T) {
 		{
 			name:      "set valid setting with valid value",
 			command:   "/jitsi settings embedded true",
-			output:    "Jitsi settings updated:\n\n* embedded: `true`",
+			output:    "Video call settings updated:\n\n* embedded: `true`",
+			newConfig: &UserConfig{Embedded: true, NamingScheme: "mattermost", ShowPrejoinPage: true},
+		},
+		{
+			name:      "set valid setting through videocall alias",
+			command:   "/videocall settings embedded true",
+			output:    "Video call settings updated:\n\n* embedded: `true`",
 			newConfig: &UserConfig{Embedded: true, NamingScheme: "mattermost", ShowPrejoinPage: true},
 		},
 		{
@@ -109,7 +115,7 @@ func TestCommandSettings(t *testing.T) {
 		{
 			name:      "get current user settings",
 			command:   "/jitsi settings see",
-			output:    "###### Jitsi Settings:\n* Embedded: `false`\n* Show Pre-join Page: `true`\n* Naming Scheme: `mattermost`",
+			output:    "###### Video Call Settings:\n* Embedded: `false`\n* Show Pre-join Page: `true`\n* Naming Scheme: `mattermost`",
 			newConfig: nil,
 		},
 	}
@@ -168,7 +174,7 @@ func TestCommandStartMeeting(t *testing.T) {
 		p.b = i18nBundle
 
 		apiMock.On("SendEphemeralPost", "test-user", mock.MatchedBy(func(post *model.Post) bool {
-			return post.Props["attachments"].([]*model.SlackAttachment)[0].Text == "Select type of meeting you want to start"
+			return post.Props["attachments"].([]*model.SlackAttachment)[0].Text == "Select type of video call you want to start"
 		})).Return(nil)
 		apiMock.On("GetUser", "test-user").Return(&model.User{Id: "test-user"}, nil)
 		apiMock.On("GetChannel", "test-channel").Return(&model.Channel{Id: "test-channel"}, nil)
@@ -231,6 +237,33 @@ func TestCommandStartMeeting(t *testing.T) {
 		apiMock.On("KVGet", "config_test-user", mock.Anything).Return(nil, nil)
 
 		response, err := p.ExecuteCommand(&plugin.Context{}, &model.CommandArgs{UserId: "test-user", ChannelId: "test-channel", Command: "/jitsi start topic"})
+		require.Equal(t, &model.CommandResponse{}, response)
+		require.Nil(t, err)
+	})
+
+	t.Run("meeting with topic through videocall alias", func(t *testing.T) {
+		apiMock := plugintest.API{}
+		defer apiMock.AssertExpectations(t)
+		p.SetAPI(&apiMock)
+
+		apiMock.On("GetBundlePath").Return("..", nil)
+		config := model.Config{}
+		config.SetDefaults()
+		apiMock.On("GetConfig").Return(&config, nil)
+
+		i18nBundle, err := i18n.InitBundle(p.API, filepath.Join("assets", "i18n"))
+		require.Nil(t, err)
+		p.b = i18nBundle
+
+		apiMock.On("CreatePost", mock.MatchedBy(func(post *model.Post) bool {
+			return strings.HasPrefix(post.Props["meeting_link"].(string), "http://test/topic")
+		})).Return(&model.Post{}, nil)
+		apiMock.On("GetUser", "test-user").Return(&model.User{Id: "test-user"}, nil)
+		apiMock.On("GetChannel", "test-channel").Return(&model.Channel{Id: "test-channel"}, nil)
+		apiMock.On("GetUser", "test-user").Return(&model.User{Id: "test-user"}, nil)
+		apiMock.On("KVGet", "config_test-user", mock.Anything).Return(nil, nil)
+
+		response, err := p.ExecuteCommand(&plugin.Context{}, &model.CommandArgs{UserId: "test-user", ChannelId: "test-channel", Command: "/videocall start topic"})
 		require.Equal(t, &model.CommandResponse{}, response)
 		require.Nil(t, err)
 	})

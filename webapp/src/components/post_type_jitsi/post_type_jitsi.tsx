@@ -78,7 +78,7 @@ export class PostTypeJitsi extends React.PureComponent<Props, State> {
                 <div style={style.validUntil}>
                     <FormattedMessage
                         id='jitsi.link-valid-until'
-                        defaultMessage=' Meeting link valid until: '
+                        defaultMessage=' Video call link valid until: '
                     />
                     <b>{dateStr}</b>
                 </div>
@@ -107,7 +107,7 @@ export class PostTypeJitsi extends React.PureComponent<Props, State> {
         const preText = (
             <FormattedMessage
                 id='jitsi.creator-has-started-a-meeting'
-                defaultMessage='{creator} has started a meeting'
+                defaultMessage='{creator} has started a video call'
                 values={{creator: this.props.creatorName}}
             />
         );
@@ -115,14 +115,14 @@ export class PostTypeJitsi extends React.PureComponent<Props, State> {
         let subtitle = (
             <FormattedMessage
                 id='jitsi.meeting-id'
-                defaultMessage='Meeting ID: '
+                defaultMessage='Video Call ID: '
             />
         );
         if (props.meeting_personal) {
             subtitle = (
                 <FormattedMessage
                     id='jitsi.personal-meeting-id'
-                    defaultMessage='Personal Meeting ID (PMI): '
+                    defaultMessage='Personal Video Call ID (PMI): '
                 />
             );
         }
@@ -130,7 +130,7 @@ export class PostTypeJitsi extends React.PureComponent<Props, State> {
         let title = (
             <FormattedMessage
                 id='jitsi.default-title'
-                defaultMessage='Jitsi Meeting'
+                defaultMessage='Video Call'
             />
         );
         if (props.meeting_topic) {

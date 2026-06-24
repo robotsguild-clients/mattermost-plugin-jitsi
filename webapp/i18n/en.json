@@ -1,14 +1,14 @@
 {
   "jitsi.close": "Close",
-  "jitsi.creator-has-started-a-meeting": "{creator} has started a meeting",
-  "jitsi.default-title": "Jitsi Meeting",
+  "jitsi.creator-has-started-a-meeting": "{creator} has started a video call",
+  "jitsi.default-title": "Video Call",
   "jitsi.join-meeting": "JOIN MEETING",
-  "jitsi.link-valid-until": "Meeting link valid until: ",
+  "jitsi.link-valid-until": "Video call link valid until: ",
   "jitsi.maximize": "Maximize",
-  "jitsi.meeting-id": "Meeting ID: ",
+  "jitsi.meeting-id": "Video Call ID: ",
   "jitsi.minimize": "Minimize",
   "jitsi.move-down": "Move down",
   "jitsi.move-up": "Move up",
   "jitsi.open-in-new-tab": "Open in new tab",
-  "jitsi.personal-meeting-id": "Personal Meeting ID (PMI): "
+  "jitsi.personal-meeting-id": "Personal Video Call ID (PMI): "
 }

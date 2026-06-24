@@ -3,7 +3,7 @@
 exports[`PostTypeJitsi should render a post if the post type is not null, and should try to enrich the token 1`] = `
 <div>
   <FormattedMessage
-    defaultMessage="{creator} has started a meeting"
+    defaultMessage="{creator} has started a video call"
     id="jitsi.creator-has-started-a-meeting"
     values={
       Object {
@@ -57,7 +57,7 @@ exports[`PostTypeJitsi should render a post if the post type is not null, and sh
         </h1>
         <span>
           <FormattedMessage
-            defaultMessage="Meeting ID: "
+            defaultMessage="Video Call ID: "
             id="jitsi.meeting-id"
             values={Object {}}
           />
@@ -129,7 +129,7 @@ exports[`PostTypeJitsi should render a post if the post type is not null, and sh
               }
             >
               <FormattedMessage
-                defaultMessage=" Meeting link valid until: "
+                defaultMessage=" Video call link valid until: "
                 id="jitsi.link-valid-until"
                 values={Object {}}
               />
@@ -148,7 +148,7 @@ exports[`PostTypeJitsi should render a post if the post type is not null, and sh
 exports[`PostTypeJitsi should render a post without token if there is no jwt token, and shouldn't try to enrich the token 1`] = `
 <div>
   <FormattedMessage
-    defaultMessage="{creator} has started a meeting"
+    defaultMessage="{creator} has started a video call"
     id="jitsi.creator-has-started-a-meeting"
     values={
       Object {
@@ -202,7 +202,7 @@ exports[`PostTypeJitsi should render a post without token if there is no jwt tok
         </h1>
         <span>
           <FormattedMessage
-            defaultMessage="Meeting ID: "
+            defaultMessage="Video Call ID: "
             id="jitsi.meeting-id"
             values={Object {}}
           />
@@ -279,7 +279,7 @@ exports[`PostTypeJitsi should render null if the post type is null 1`] = `""`;
 exports[`PostTypeJitsi should render the a different subtitle if the meeting is personal 1`] = `
 <div>
   <FormattedMessage
-    defaultMessage="{creator} has started a meeting"
+    defaultMessage="{creator} has started a video call"
     id="jitsi.creator-has-started-a-meeting"
     values={
       Object {
@@ -333,7 +333,7 @@ exports[`PostTypeJitsi should render the a different subtitle if the meeting is 
         </h1>
         <span>
           <FormattedMessage
-            defaultMessage="Personal Meeting ID (PMI): "
+            defaultMessage="Personal Video Call ID (PMI): "
             id="jitsi.personal-meeting-id"
             values={Object {}}
           />
@@ -405,7 +405,7 @@ exports[`PostTypeJitsi should render the a different subtitle if the meeting is 
               }
             >
               <FormattedMessage
-                defaultMessage=" Meeting link valid until: "
+                defaultMessage=" Video call link valid until: "
                 id="jitsi.link-valid-until"
                 values={Object {}}
               />
@@ -435,7 +435,7 @@ exports[`PostTypeJitsi should render the default topic if the topic is empty 1`]
   }
 >
   <FormattedMessage
-    defaultMessage="Jitsi Meeting"
+    defaultMessage="Video Call"
     id="jitsi.default-title"
     values={Object {}}
   />

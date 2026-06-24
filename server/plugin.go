@@ -58,13 +58,19 @@ func (p *Plugin) OnActivate() error {
 		return err
 	}
 
-	command, err := p.createJitsiCommand()
+	commands, err := p.createJitsiCommands()
 	if err != nil {
 		return err
 	}
 
-	if err = p.API.RegisterCommand(command); err != nil {
-		return err
+	for _, command := range commands {
+		if err = p.API.RegisterCommand(command); err != nil {
+			if command.Trigger == jitsiCommand {
+				return err
+			}
+
+			p.API.LogWarn("Unable to register Jitsi command alias", "trigger", command.Trigger, "error", err.Error())
+		}
 	}
 
 	i18nBundle, err := i18n.InitBundle(p.API, filepath.Join("assets", "i18n"))
@@ -221,7 +227,7 @@ func (p *Plugin) startMeeting(user *model.User, channel *model.Channel, meetingI
 	meetingPersonal := false
 	defaultMeetingTopic := p.b.LocalizeDefaultMessage(l, &i18n.Message{
 		ID:    "jitsi.start_meeting.default_meeting_topic",
-		Other: "Jitsi Meeting",
+		Other: "Video Call",
 	})
 
 	if len(meetingTopic) < 1 {
@@ -241,7 +247,7 @@ func (p *Plugin) startMeeting(user *model.User, channel *model.Channel, meetingI
 				meetingTopic = p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:    "jitsi.start_meeting.personal_meeting_topic",
-						Other: "{{.Name}}'s Personal Meeting",
+						Other: "{{.Name}}'s Personal Video Call",
 					},
 					TemplateData: map[string]string{"Name": user.GetDisplayName(model.ShowNicknameFullName)},
 				})
@@ -254,7 +260,7 @@ func (p *Plugin) startMeeting(user *model.User, channel *model.Channel, meetingI
 				meetingTopic = p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 					DefaultMessage: &i18n.Message{
 						ID:    "jitsi.start_meeting.channel_meeting_topic",
-						Other: "{{.ChannelName}} Channel Meeting",
+						Other: "{{.ChannelName}} Channel Video Call",
 					},
 					TemplateData: map[string]string{"ChannelName": channel.DisplayName},
 				})
@@ -314,14 +320,14 @@ func (p *Plugin) startMeeting(user *model.User, channel *model.Channel, meetingI
 	meetingTypeString := p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "jitsi.start_meeting.meeting_id",
-			Other: "Meeting ID",
+			Other: "Video Call ID",
 		},
 	})
 	if meetingPersonal {
 		meetingTypeString = p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "jitsi.start_meeting.personal_meeting_id",
-				Other: "Personal Meeting ID (PMI)",
+				Other: "Personal Video Call ID (PMI)",
 			},
 		})
 	}
@@ -411,14 +417,14 @@ func (p *Plugin) askMeetingType(user *model.User, channel *model.Channel, rootID
 		Name: p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "jitsi.ask.meeting_name_random_words",
-				Other: "Meeting name with random words",
+				Other: "Video call name with random words",
 			},
 		}),
 		Integration: &model.PostActionIntegration{
 			URL: apiURL,
 			Context: map[string]interface{}{
 				"meeting_id":    generateEnglishTitleName(),
-				"meeting_topic": "Jitsi Meeting",
+				"meeting_topic": "Video Call",
 				"personal":      true,
 			},
 		},
@@ -428,14 +434,14 @@ func (p *Plugin) askMeetingType(user *model.User, channel *model.Channel, rootID
 		Name: p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "jitsi.ask.personal_meeting",
-				Other: "Personal meeting",
+				Other: "Personal video call",
 			},
 		}),
 		Integration: &model.PostActionIntegration{
 			URL: apiURL,
 			Context: map[string]interface{}{
 				"meeting_id":    generatePersonalMeetingName(user.Username),
-				"meeting_topic": fmt.Sprintf("%s's Meeting", user.GetDisplayName(model.ShowNicknameFullName)),
+				"meeting_topic": fmt.Sprintf("%s's Personal Video Call", user.GetDisplayName(model.ShowNicknameFullName)),
 				"personal":      true,
 			},
 		},
@@ -446,14 +452,14 @@ func (p *Plugin) askMeetingType(user *model.User, channel *model.Channel, rootID
 			Name: p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "jitsi.ask.channel_meeting",
-					Other: "Channel meeting",
+					Other: "Channel video call",
 				},
 			}),
 			Integration: &model.PostActionIntegration{
 				URL: apiURL,
 				Context: map[string]interface{}{
 					"meeting_id":    generateTeamChannelName(team.Name, channel.Name),
-					"meeting_topic": fmt.Sprintf("%s Channel Meeting", channel.DisplayName),
+					"meeting_topic": fmt.Sprintf("%s Channel Video Call", channel.DisplayName),
 					"personal":      false,
 				},
 			},
@@ -464,14 +470,14 @@ func (p *Plugin) askMeetingType(user *model.User, channel *model.Channel, rootID
 		Name: p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "jitsi.ask.uuid_meeting",
-				Other: "Meeting name with UUID",
+				Other: "Video call name with UUID",
 			},
 		}),
 		Integration: &model.PostActionIntegration{
 			URL: apiURL,
 			Context: map[string]interface{}{
 				"meeting_id":    generateUUIDName(),
-				"meeting_topic": "Jitsi Meeting",
+				"meeting_topic": "Video Call",
 				"personal":      false,
 			},
 		},
@@ -481,13 +487,13 @@ func (p *Plugin) askMeetingType(user *model.User, channel *model.Channel, rootID
 		Title: p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "jitsi.ask.title",
-				Other: "Jitsi Meeting Start",
+				Other: "Video Call Start",
 			},
 		}),
 		Text: p.b.LocalizeWithConfig(l, &i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "jitsi.ask.select_meeting_type",
-				Other: "Select type of meeting you want to start",
+				Other: "Select type of video call you want to start",
 			},
 		}),
 		Actions: actions,
