@@ -205,6 +205,41 @@ describe('Conference', () => {
         });
     });
 
+    describe('preventMessages', () => {
+        const wrapper = shallow(
+            <Conference {...defaultProps}/>
+        );
+        const instance = wrapper.instance() as Conference;
+        instance.api = {};
+
+        it('should ignore postis messages without a scope', () => {
+            const event = {
+                origin: 'http://unexpected-origin',
+                data: JSON.stringify({postis: true}),
+                stopImmediatePropagation: jest.fn(),
+                preventDefault: jest.fn()
+            } as unknown as MessageEvent;
+
+            expect(() => instance.preventMessages(event)).not.toThrow();
+            expect(event.stopImmediatePropagation).not.toBeCalled();
+            expect(event.preventDefault).not.toBeCalled();
+        });
+
+        it('should stop Jitsi external API postis messages', () => {
+            const event = {
+                origin: 'http://unexpected-origin',
+                data: JSON.stringify({postis: true, scope: 'jitsi_meet_external_api_test'}),
+                stopImmediatePropagation: jest.fn(),
+                preventDefault: jest.fn()
+            } as unknown as MessageEvent;
+
+            instance.preventMessages(event);
+
+            expect(event.stopImmediatePropagation).toBeCalledTimes(1);
+            expect(event.preventDefault).toBeCalledTimes(1);
+        });
+    });
+
     it('should execute the hangup command, wait and call the action to close the meeting, and reset the state on closed', (done) => {
         defaultProps.actions.openJitsiMeeting.mockClear();
         const wrapper = shallow(

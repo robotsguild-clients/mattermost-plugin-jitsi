@@ -82,7 +82,7 @@ export default class Conference extends React.PureComponent<Props, State> {
             } catch (err) {
                 data = {};
             }
-            if (data.postis && data.scope.indexOf('jitsi_meet_external_api_') === 0) {
+            if (data.postis && typeof data.scope === 'string' && data.scope.indexOf('jitsi_meet_external_api_') === 0) {
                 event.stopImmediatePropagation();
                 event.preventDefault();
             }
